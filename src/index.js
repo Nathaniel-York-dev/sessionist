@@ -1,0 +1,139 @@
+const express = require('express')
+const cookieparser = require('cookie-parser')
+const session = require('express-session')
+const axios = require("axios");
+const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
+
+const app = express()
+const PORT = 3008
+
+const oneMinute = 1000 * 60 * 60
+
+const apis = {
+    pokemon: 'https://pokeapi.co/api/v2/',
+    rickandmorty: 'https://rickandmortyapi.com/api/',
+    breakingbad: 'https://www.breakingbadapi.com/api/',
+    starwars: 'https://swapi.dev/api/',
+    marvel: 'https://gateway.marvel.com:443/v1/public/',
+    anilist: 'https://graphql.anilist.co',
+    drink: 'https://www.thecocktaildb.com/api/',
+    food: 'https://www.themealdb.com/api/json/v1/1/',
+    covid: 'https://covid19.mathdro.id/api',
+}
+
+// Session middleware
+app.use(session({
+    secret: 'keyboard cat',
+    saveUninitialized: true,
+    cookie: { maxAge: oneMinute },
+    resave: false,
+}))
+
+// Parse incoming requests data
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// static file
+app.use(express.static(__dirname))
+
+// Parse cookies
+app.use(cookieparser())
+
+app.use((req, res, next) => {
+    if(req.url.includes('api') || req.url.includes('mirror')) {
+        const header = req.headers['authorization'] || ''
+        const token = header.split(' ')[1]
+
+        try {
+            if(req.session.username && token) {
+                return jwt.verify(token, 'not_a_secret', (err, user) => {
+                    if(err) {
+                        return res.status(403).send({ success: false })
+                    }
+                    return next()
+                })
+            }
+            return res.status(401).send('Unauthorized')
+        }catch (e){
+            console.log(e)
+            return res.status(401).send('Unauthorized')
+        }
+    }
+    return next()
+})
+
+// username and password
+const user = 'admin'
+const pass = 'admin'
+
+let sessionData = {}
+
+// Endpoint to login
+app.post('/login', (req, res) => {
+    const { username, password } = req.body
+    console.log(req.body)
+    if (username === user && password === pass) {
+        sessionData = req.session
+        sessionData.username = username
+        sessionData.password = password
+        const token = jwt.sign({ username }, 'not_a_secret', { expiresIn: '60s' })
+        res.status(200).send({ success: true, token })
+    } else {
+        res.status(401).send({ success: false })
+    }
+})
+
+
+
+// Endpoint to logout
+app.get('/logout', (req, res) => {
+    req.session.destroy()
+    res.status(200).send({ success: true })
+})
+
+// Endpoint to mirror other api
+app.post('/mirror/:api', (req, res) => {
+    const { api } = req.params
+    const { endpoint } = req.body
+    if(!apis[api] || !endpoint) {
+        return res.status(400).send({ success: false , error: 'Invalid endpoint or not valid api'})
+    }
+    axios.get(`${apis[api]}${endpoint}`, req.body).then((response) => {
+        res.status(200).send(response.data)
+    }).catch((error) => {
+        res.status(500).send({ success: false , error: error})
+    })
+})
+
+// Endpoint to check if user is logged in
+app.get('/api/check', (req, res) => {
+    const header = req.headers['authorization'] || ''
+    const token = header.split(' ')[1]
+    if(!token) {
+        return res.status(401).send({ success: false })
+    }
+    jwt.verify(token, 'not_a_secret', (err, user) => {
+        if(err) {
+            return res.status(403).send({ success: false })
+        }
+        res.status(200).send({ success: true, user })
+    })
+})
+
+// Enpoint to refresh token
+app.post('/refresh', (req, res) => {
+    console.log(req.session)
+    const {username} = req.session
+    if(username){
+        const token = jwt.sign({ username }, 'not_a_secret', { expiresIn: '60s' })
+        res.status(200).send({ success: true, token })
+    }else {
+        res.status(401).send({ success: false })
+    }
+})
+
+// Init listener port
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+})
