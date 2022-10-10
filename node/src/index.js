@@ -4,6 +4,7 @@ const session = require('express-session')
 const axios = require("axios");
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
+const { MongoClient } = require('mongodb')
 
 const app = express()
 const PORT = 3008
@@ -41,22 +42,24 @@ app.use(express.static(__dirname))
 app.use(cookieparser())
 
 app.use((req, res, next) => {
-    if(req.url.includes('api') || req.url.includes('mirror')) {
+    if(!exclude(req.url)) {
         const header = req.headers['authorization'] || ''
         const token = header.split(' ')[1]
 
         try {
             if(req.session.username && token) {
-                return jwt.verify(token, 'not_a_secret', (err, user) => {
-                    if(err) {
-                        return res.status(403).send({ success: false })
-                    }
-                    return next()
-                })
+                if (!req.url.includes('refresh')) {
+                    return jwt.verify(token, 'not_a_secret', (err, user) => {
+                        if(err) {
+                            return res.status(403).send({ success: false })
+                        }
+                        return next()
+                    })
+                }
+                return next()
             }
             return res.status(401).send('Unauthorized')
         }catch (e){
-            console.log(e)
             return res.status(401).send('Unauthorized')
         }
     }
@@ -70,24 +73,38 @@ const pass = 'admin'
 let sessionData = {}
 
 // Endpoint to login
-app.post('/login', (req, res) => {
+app.post('/api/login', (req, res) => {
     const { username, password } = req.body
-    console.log(req.body)
-    if (username === user && password === pass) {
-        sessionData = req.session
-        sessionData.username = username
-        sessionData.password = password
-        const token = jwt.sign({ username }, 'not_a_secret', { expiresIn: '60s' })
-        res.status(200).send({ success: true, token })
-    } else {
-        res.status(401).send({ success: false })
+    const url = 'mongodb://mongo:27017'
+    const client = new MongoClient(url)
+    if (!username || !password) {
+        return res.status(400).send('Username and password are required')
     }
+    client.connect().then( async () => {
+        const db = client.db('sessionist')
+        const collection = db.collection('users')
+        const passwordCrypt = crypto.createHash('sha256').update(password).digest('hex')
+        console.log(username, passwordCrypt);
+        const user = await collection.findOne({ username: username, password: passwordCrypt })
+        console.log(user);
+        if (user) {
+            sessionData = req.session
+            sessionData.username = username
+            sessionData.password = password
+            const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
+            res.status(200).send({ success: true, token })
+        }else {
+            res.status(401).send({ success: false })
+        }
+    }).catch(err => {
+        res.status(500).send({ success: false })
+    })
 })
 
 
 
 // Endpoint to logout
-app.get('/logout', (req, res) => {
+app.get('/api/logout', (req, res) => {
     req.session.destroy()
     res.status(200).send({ success: true })
 })
@@ -121,8 +138,31 @@ app.get('/api/check', (req, res) => {
     })
 })
 
+// Endpoint to register a new user
+app.post('/api/register', (req, res) => {
+    const { username, email ,password } = req.body
+    if(!username || !password || !email || !validateEmail(email)) {
+        return res.status(400).send({ success: false, error: 'Invalid username or password' })
+    }
+    const hash = crypto.createHash('sha256').update(password).digest('hex')
+    const user = { username, email, password: hash }
+    const url = 'mongodb://mongo:27017'
+    const client = new MongoClient(url)
+    client.connect().then(() => {
+        const db = client.db('sessionist')
+        const collection = db.collection('users')
+        collection.insertOne(user).then(() => {
+            res.status(200).send({ success: true })
+        }).catch((error) => {
+            res.status(500).send({ success: false, error })
+        })
+    }).catch((error) => {
+        res.status(500).send({ success: false, error })
+    })
+})
+
 // Enpoint to refresh token
-app.post('/refresh', (req, res) => {
+app.post('/api/refresh', (req, res) => {
     console.log(req.session)
     const {username} = req.session
     if(username){
@@ -132,6 +172,18 @@ app.post('/refresh', (req, res) => {
         res.status(401).send({ success: false })
     }
 })
+
+// Regex to check if email is valid
+function validateEmail(email) {
+    const re = /\S+@\S+\.\S+/
+    return re.test(email)
+}
+
+// Regext to exclude some endpoints
+function exclude(url) {
+    const regex = /\/(login|register)/
+    return regex.test(url)
+}
 
 // Init listener port
 app.listen(PORT, () => {
