@@ -23,28 +23,7 @@ const apis = {
     food: 'https://www.themealdb.com/api/json/v1/1/',
     covid: 'https://covid19.mathdro.id/api',
 }
-app.use(function (req, res, next) {
 
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', 'localhost:4200');
-
-    // Request methods you wish to allow
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-    // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-    // Pass to next layer of middleware
-    next();
-});
-app.use( cors({
-    credentials: true,
-    origin: 'http://localhost:4200'
-}));
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
@@ -75,6 +54,7 @@ app.use((req, res, next) => {
                 if (!req.url.includes('refresh')) {
                     return jwt.verify(token, 'not_a_secret', (err, user) => {
                         if(err) {
+                            console.log(req)
                             return res.status(403).send({ success: false })
                         }
                         return next()
@@ -82,13 +62,34 @@ app.use((req, res, next) => {
                 }
                 return next()
             }
+            console.log(req)
             return res.status(401).send('Unauthorized')
         }catch (e){
+            console.log(req)
             return res.status(401).send('Unauthorized')
         }
     }
     return next()
 })
+
+app.use(function (req, res, next) {
+    console.log(req);
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', 'localhost:4200');
+
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
 
 // username and password
 const user = 'admin'
