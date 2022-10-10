@@ -41,7 +41,6 @@ app.use(express.static(__dirname))
 
 // CORS
 app.use(function (req, res, next) {
-    console.log(req);
     // Website you wish to allow to connect
     res.setHeader('Access-Control-Allow-Origin', '*');
 
