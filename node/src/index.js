@@ -25,25 +25,6 @@ const apis = {
     covid: 'https://covid19.mathdro.id/api',
 }
 
-// CORS
-app.use(function (req, res, next) {
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    // Request methods you wish to allow
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-    // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, content-type, Accept, Authorization, Access-Control-Allow-Credentials');
-
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-    // Pass to next layer of middleware
-    next();
-});
-
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
@@ -63,6 +44,32 @@ app.use(express.static(__dirname))
 
 // Parse cookies
 app.use(cookieparser())
+
+// CORS
+app.use(function (req, res, next) {
+
+    const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch/', 'http://localhost:3200'];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
+    // Website you wish to allow to connect
+    //res.setHeader('Access-Control-Allow-Origin', 'http://info.cern.ch/');
+
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, content-type, Accept, Authorization, Access-Control-Allow-Credentials');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
 
 /*app.use((req, res, next) => {
     if(!exclude(req.url)) {
