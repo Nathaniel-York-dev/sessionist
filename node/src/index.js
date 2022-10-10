@@ -48,6 +48,8 @@ app.use(function (req, res, next) {
 app.use(session({
     secret: 'keyboard cat',
     saveUninitialized: true,
+    secure: false,
+    sameSite: 'none',
     cookie: { maxAge: oneMinute },
     resave: false,
 }))
