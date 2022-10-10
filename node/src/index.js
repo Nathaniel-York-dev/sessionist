@@ -181,7 +181,7 @@ function validateEmail(email) {
 
 // Regext to exclude some endpoints
 function exclude(url) {
-    const regex = /\/(login|register)/
+    const regex = /\/(login|register|refresh)/
     return regex.test(url)
 }
 
