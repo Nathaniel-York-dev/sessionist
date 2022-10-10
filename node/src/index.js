@@ -25,31 +25,13 @@ const apis = {
     covid: 'https://covid19.mathdro.id/api',
 }
 
-// Session middleware
-app.use(session({
-    secret: 'keyboard cat',
-    saveUninitialized: true,
-    secure: false,
-    sameSite: 'none',
-    cookie: { maxAge: oneMinute },
-    resave: false,
-}))
-
-// Parse incoming requests data
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-// static file
-app.use(express.static(__dirname))
-
-// Parse cookies
-app.use(cookieparser())
-
 // CORS
 app.use(function (req, res, next) {
 
-    const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch/', 'http://localhost:3200'];
-    const origin = req.headers.origin;
+    const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch/', 'http://localhost:3200']
+    const origin = req.headers.origin
+    console.log('origin', origin)
+    console.log('is allowed', allowedOrigins.includes(origin))
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
@@ -70,6 +52,26 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
+
+// Session middleware
+app.use(session({
+    secret: 'keyboard cat',
+    saveUninitialized: true,
+    secure: false,
+    sameSite: 'none',
+    cookie: { maxAge: oneMinute },
+    resave: false,
+}))
+
+// Parse incoming requests data
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// static file
+app.use(express.static(__dirname))
+
+// Parse cookies
+app.use(cookieparser())
 
 /*app.use((req, res, next) => {
     if(!exclude(req.url)) {
