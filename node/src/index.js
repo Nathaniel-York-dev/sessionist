@@ -68,23 +68,20 @@ app.use((req, res, next) => {
         const token = header.split(' ')[1]
 
         try {
-            if(req.session.username && token) {
-                if (!req.url.includes('refresh')) {
+            if (!req.url.includes('refresh')) {
+                if (req.session.username && token) {
                     return jwt.verify(token, 'not_a_secret', (err, user) => {
-                        if(err) {
-                            console.log(req)
-                            return res.status(403).send({ success: false })
+                        if (err) {
+                            res.status(403).send({success: false})
                         }
                         return next()
                     })
                 }
-                return next()
+                res.status(401).send('Unauthorized')
             }
-            console.log(req)
-            return res.status(401).send('Unauthorized')
+            return next()
         }catch (e){
-            console.log(req)
-            return res.status(401).send('Unauthorized')
+            res.status(401).send('Unauthorized')
         }
     }
     return next()
@@ -205,7 +202,7 @@ function validateEmail(email) {
 
 // Regext to exclude some endpoints
 function exclude(url) {
-    const regex = /\/(login|register|refresh)/
+    const regex = /\/(login|register)/
     return regex.test(url)
 }
 
