@@ -200,7 +200,7 @@ app.post('/api/register', (req, res) => {
 app.post('/api/refresh', (req, res) => {
     const {user} = req.body;
     if(user){
-        const token = jwt.sign({ username }, 'not_a_secret', { expiresIn: '60s' })
+        const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
         res.status(200).send({ success: true, token })
     }else {
         res.status(401).send({ success: false })
