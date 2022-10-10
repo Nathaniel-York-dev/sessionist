@@ -39,10 +39,28 @@ app.use(express.urlencoded({ extended: true }))
 // static file
 app.use(express.static(__dirname))
 
+// CORS
+app.use(function (req, res, next) {
+    console.log(req);
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', 'localhost:4200');
+
+    // Request methods you wish to allow
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+    // Request headers you wish to allow
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, content-type, Accept, Authorization, Access-Control-Allow-Credentials');
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
+
 // Parse cookies
 app.use(cookieparser())
-
-app.enable('trust proxy')
 
 app.use((req, res, next) => {
     if(!exclude(req.url)) {
@@ -71,25 +89,6 @@ app.use((req, res, next) => {
     }
     return next()
 })
-
-app.use(function (req, res, next) {
-    console.log(req);
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', 'localhost:4200');
-
-    // Request methods you wish to allow
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-    // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-    // Pass to next layer of middleware
-    next();
-});
 
 // username and password
 const user = 'admin'
