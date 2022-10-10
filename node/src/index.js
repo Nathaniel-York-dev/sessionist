@@ -26,7 +26,7 @@ const apis = {
 app.use(function (req, res, next) {
 
     // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', 'localhost:4200');
 
     // Request methods you wish to allow
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
@@ -41,7 +41,10 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
-
+app.use( cors({
+    credentials: true,
+    origin: 'http://localhost:4200'
+}));
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
@@ -59,6 +62,8 @@ app.use(express.static(__dirname))
 
 // Parse cookies
 app.use(cookieparser())
+
+app.enable('trust proxy')
 
 app.use((req, res, next) => {
     if(!exclude(req.url)) {
