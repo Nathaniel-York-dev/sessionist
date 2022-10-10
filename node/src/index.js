@@ -5,6 +5,7 @@ const axios = require("axios");
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const { MongoClient } = require('mongodb')
+const cors = require('cors')
 
 const app = express()
 const PORT = 3008
@@ -22,7 +23,7 @@ const apis = {
     food: 'https://www.themealdb.com/api/json/v1/1/',
     covid: 'https://covid19.mathdro.id/api',
 }
-
+app.use(cors());
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
