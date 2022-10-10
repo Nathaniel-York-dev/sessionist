@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const { MongoClient } = require('mongodb')
 const cors = require('cors')
+const e = require("express");
 
 const app = express()
 const PORT = 3008
@@ -23,21 +24,6 @@ const apis = {
     food: 'https://www.themealdb.com/api/json/v1/1/',
     covid: 'https://covid19.mathdro.id/api',
 }
-
-// Session middleware
-app.use(session({
-    secret: 'keyboard cat',
-    saveUninitialized: true,
-    cookie: { maxAge: oneMinute },
-    resave: false,
-}))
-
-// Parse incoming requests data
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
-
-// static file
-app.use(express.static(__dirname))
 
 // CORS
 app.use(function (req, res, next) {
@@ -58,6 +44,21 @@ app.use(function (req, res, next) {
     next();
 });
 
+// Session middleware
+app.use(session({
+    secret: 'keyboard cat',
+    saveUninitialized: true,
+    cookie: { maxAge: oneMinute },
+    resave: false,
+}))
+
+// Parse incoming requests data
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// static file
+app.use(express.static(__dirname))
+
 // Parse cookies
 app.use(cookieparser())
 
@@ -72,15 +73,18 @@ app.use((req, res, next) => {
                     return jwt.verify(token, 'not_a_secret', (err, user) => {
                         if (err) {
                             res.status(403).send({success: false})
+                            throw err
                         }
                         return next()
                     })
                 }
                 res.status(401).send('Unauthorized')
+                return
             }
             return next()
         }catch (e){
             res.status(401).send('Unauthorized')
+            return
         }
     }
     return next()
