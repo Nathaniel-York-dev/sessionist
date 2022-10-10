@@ -28,7 +28,7 @@ const apis = {
 // CORS
 app.use(function (req, res, next) {
 
-    const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch/', 'http://localhost:3200']
+    const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch', 'http://localhost:3200']
     const origin = req.headers.origin
     console.log('origin', origin)
     console.log('is allowed', allowedOrigins.includes(origin))
