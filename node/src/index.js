@@ -23,9 +23,7 @@ const apis = {
     food: 'https://www.themealdb.com/api/json/v1/1/',
     covid: 'https://covid19.mathdro.id/api',
 }
-app.use(cors({
-    origin: '*'
-}));
+
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
