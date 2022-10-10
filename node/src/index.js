@@ -62,7 +62,7 @@ app.use(express.static(__dirname))
 // Parse cookies
 app.use(cookieparser())
 
-app.use((req, res, next) => {
+/*app.use((req, res, next) => {
     if(!exclude(req.url)) {
         const header = req.headers['authorization'] || ''
         const token = header.split(' ')[1]
@@ -88,7 +88,7 @@ app.use((req, res, next) => {
         }
     }
     return next()
-})
+})*/
 
 // username and password
 const user = 'admin'
