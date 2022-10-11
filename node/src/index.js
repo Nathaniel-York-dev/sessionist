@@ -147,14 +147,16 @@ app.post('/mirror/:api', (req, res) => {
     if(!apis[api] || !endpoint) {
         return res.status(400).send({ success: false , error: 'Invalid endpoint or not valid api'})
     }
-    if(!validatedToken){
+    if(validatedToken){
+        axios.get(`${apis[api]}${endpoint}`, req.body).then((response) => {
+            res.status(200).send(response.data)
+        }).catch((error) => {
+            res.status(500).send({ success: false , error: error})
+        })
+    }else {
         return res.status(401).send({ success: false , error: 'Invalid token'})
     }
-    axios.get(`${apis[api]}${endpoint}`, req.body).then((response) => {
-        res.status(200).send(response.data)
-    }).catch((error) => {
-        res.status(500).send({ success: false , error: error})
-    })
+
 })
 
 // Endpoint to check if user is logged in
