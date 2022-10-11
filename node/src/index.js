@@ -80,7 +80,7 @@ app.use(cors({
 });*/
 
 // Parse incoming requests data
-//app.use(express.json())
+app.use(express.json())
 //app.use(express.urlencoded({ extended: true }))
 
 // static file
