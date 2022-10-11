@@ -7,6 +7,7 @@ const crypto = require('crypto')
 const mongoStore = require('connect-mongodb-session')(session)
 const { MongoClient } = require('mongodb')
 const uriMongo = 'mongodb://mongo:27017'
+const cors = require('cors')
 const store = new mongoStore({
     collection: 'userSessions',
     uri: uriMongo,
@@ -45,8 +46,15 @@ app.use(session({
     }
 }))
 
+// Cors middleware
+app.use(cors({
+    origin: 'http://localhost:4200',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    credentials: true
+}))
+
 // CORS
-app.use(function (req, res, next) {
+/*app.use(function (req, res, next) {
 
     const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch', 'http://localhost:3200']
     const origin = req.headers.origin
@@ -69,23 +77,14 @@ app.use(function (req, res, next) {
 
     // Pass to next layer of middleware
     next();
-});
+});*/
 
 // Parse incoming requests data
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+//app.use(express.json())
+//app.use(express.urlencoded({ extended: true }))
 
 // static file
-app.use(express.static(__dirname))
-
-// Parse cookies
-app.use(cookieparser())
-
-// username and password
-const user = 'admin'
-const pass = 'admin'
-
-let sessionData = {}
+//app.use(express.static(__dirname))
 
 // Endpoint to login
 app.post('/api/login', (req, res) => {
