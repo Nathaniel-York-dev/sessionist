@@ -4,7 +4,14 @@ const session = require('express-session')
 const axios = require("axios");
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
+const mongoStore = require('connect-mongodb-session')(session)
 const { MongoClient } = require('mongodb')
+const uriMongo = 'mongodb://mongo:27017'
+const store = new mongoStore({
+    collection: 'userSessions',
+    uri: uriMongo,
+    expires: 1000 * 60 * 60
+})
 
 const app = express()
 const PORT = 3008
@@ -22,6 +29,21 @@ const apis = {
     food: 'https://www.themealdb.com/api/json/v1/1/',
     covid: 'https://covid19.mathdro.id/api',
 }
+
+// Session middleware
+app.use(session({
+    secret: 'not_a_secret',
+    name: 'session',
+    store: store,
+    saveUninitialized: false,
+    resave: false,
+    cookie: {
+        sameSite: false,
+        secure: true,
+        maxAge: oneMinute,
+        httpOnly: true
+    }
+}))
 
 // CORS
 app.use(function (req, res, next) {
@@ -48,20 +70,6 @@ app.use(function (req, res, next) {
     // Pass to next layer of middleware
     next();
 });
-
-// Session middleware
-app.use(session({
-    secret: 'keyboard cat',
-    name: 'session',
-    saveUninitialized: false,
-    resave: false,
-    cookie: {
-        sameSite: 'none',
-        secure: true,
-        httpOnly: true,
-        maxAge: oneMinute
-    }
-}))
 
 // Parse incoming requests data
 app.use(express.json())
@@ -93,11 +101,12 @@ app.post('/api/login', (req, res) => {
         const passwordCrypt = crypto.createHash('sha256').update(password).digest('hex')
         const user = await collection.findOne({ username: username, password: passwordCrypt })
         if (user) {
-            sessionData = req.session
-            sessionData.username = username
-            sessionData.password = password
-            sessionData.email = user.email
             const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
+            req.session.user = {
+                username: user.username,
+                email: user.email,
+                token: token
+            }
             res.status(200).send({ success: true, token })
         }else {
             res.status(401).send({ success: false })
