@@ -199,8 +199,9 @@ app.post('/api/register', (req, res) => {
 // Enpoint to refresh token
 app.post('/api/refresh', (req, res) => {
     //const {username, email} = req.session
-    if(true){
-        const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
+    const {session} = req.body
+    if(session){
+        const token = jwt.sign(session, 'not_a_secret', { expiresIn: '60s' })
         res.status(200).send({ success: true, token })
     }else {
         res.status(401).send({ success: false })
