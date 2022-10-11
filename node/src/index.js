@@ -5,8 +5,6 @@ const axios = require("axios");
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const { MongoClient } = require('mongodb')
-const cors = require('cors')
-const e = require("express");
 
 const app = express()
 const PORT = 3008
@@ -54,14 +52,15 @@ app.use(function (req, res, next) {
 // Session middleware
 app.use(session({
     secret: 'keyboard cat',
-    saveUninitialized: true,
-    cookie: {
-        maxAge: oneMinute,
-        sameSite: 'none',
-        secure: false,
-        httpOnly: false
-    },
+    name: 'session',
+    saveUninitialized: false,
     resave: false,
+    cookie: {
+        sameSite: false,
+        secure: false,
+        httpOnly: true,
+        maxAge: oneMinute
+    }
 }))
 
 // Parse incoming requests data
@@ -97,6 +96,7 @@ app.post('/api/login', (req, res) => {
             sessionData = req.session
             sessionData.username = username
             sessionData.password = password
+            sessionData.email = user.email
             const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
             res.status(200).send({ success: true, token })
         }else {
@@ -139,7 +139,9 @@ app.get('/api/check', (req, res) => {
     const header = req.headers['authorization'] || ''
     const token = header.split(' ')[1]
     const validatedToken = validateToken(token);
-    if (validatedToken) {
+    console.log(req.session)
+    const {username, email} = req.session
+    if (validatedToken && username && email) {
         res.status(200).send({ success: true, session: validatedToken})
     }else {
         res.status(401).send({ success: false })
