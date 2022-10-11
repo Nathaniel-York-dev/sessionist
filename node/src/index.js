@@ -108,7 +108,7 @@ app.post('/api/login', (req, res) => {
         const passwordCrypt = crypto.createHash('sha256').update(password).digest('hex')
         const user = await collection.findOne({ username: username, password: passwordCrypt })
         if (user) {
-            const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
+            const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '30s' })
             req.session.user = {
                 username: user.username,
                 email: user.email,
@@ -201,7 +201,7 @@ app.post('/api/refresh', (req, res) => {
     //const {username, email} = req.session
     const {session} = req.body
     if(session){
-        const token = jwt.sign(session, 'not_a_secret', { expiresIn: '60s' })
+        const token = jwt.sign(session, 'not_a_secret', { expiresIn: '40s' })
         res.status(200).send({ success: true, token })
     }else {
         res.status(401).send({ success: false })
