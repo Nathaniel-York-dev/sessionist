@@ -141,7 +141,9 @@ app.post('/mirror/:api', (req, res) => {
     const { api } = req.params
     const { endpoint } = req.body
     const token = req.headers['authorization'] || ''
+    console.log('TOKEN', token)
     const validatedToken = validateToken(token.split(' ')[1])
+    console.log('VALIDATED TOKEN', validatedToken)
     if(!apis[api] || !endpoint) {
         return res.status(400).send({ success: false , error: 'Invalid endpoint or not valid api'})
     }
