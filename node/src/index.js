@@ -106,7 +106,12 @@ app.post('/api/login', (req, res) => {
                 email: user.email,
                 token: token
             }
-            res.status(200).send({ success: true, token })
+            req.session.save( err =>{
+                console.log(err)
+                if(!err) {
+                    res.status(200).send(req.session.user)
+                }
+            })
         }else {
             res.status(401).send({ success: false })
         }
