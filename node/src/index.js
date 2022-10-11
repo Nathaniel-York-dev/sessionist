@@ -30,8 +30,6 @@ app.use(function (req, res, next) {
 
     const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch', 'http://localhost:3200']
     const origin = req.headers.origin
-    console.log('origin', origin)
-    console.log('is allowed', allowedOrigins.includes(origin))
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
@@ -57,9 +55,12 @@ app.use(function (req, res, next) {
 app.use(session({
     secret: 'keyboard cat',
     saveUninitialized: true,
-    secure: false,
-    sameSite: 'none',
-    cookie: { maxAge: oneMinute },
+    cookie: {
+        maxAge: oneMinute,
+        sameSite: 'none',
+        secure: false,
+        httpOnly: false
+    },
     resave: false,
 }))
 
@@ -72,34 +73,6 @@ app.use(express.static(__dirname))
 
 // Parse cookies
 app.use(cookieparser())
-
-/*app.use((req, res, next) => {
-    if(!exclude(req.url)) {
-        const header = req.headers['authorization'] || ''
-        const token = header.split(' ')[1]
-
-        try {
-            if (!req.url.includes('refresh')) {
-                if (req.session.username && token) {
-                    return jwt.verify(token, 'not_a_secret', (err, user) => {
-                        if (err) {
-                            res.status(403).send({success: false})
-                            throw err
-                        }
-                        return next()
-                    })
-                }
-                res.status(401).send('Unauthorized')
-                return
-            }
-            return next()
-        }catch (e){
-            res.status(401).send('Unauthorized')
-            return
-        }
-    }
-    return next()
-})*/
 
 // username and password
 const user = 'admin'
@@ -119,9 +92,7 @@ app.post('/api/login', (req, res) => {
         const db = client.db('sessionist')
         const collection = db.collection('users')
         const passwordCrypt = crypto.createHash('sha256').update(password).digest('hex')
-        console.log(username, passwordCrypt);
         const user = await collection.findOne({ username: username, password: passwordCrypt })
-        console.log(user);
         if (user) {
             sessionData = req.session
             sessionData.username = username
@@ -148,8 +119,13 @@ app.get('/api/logout', (req, res) => {
 app.post('/mirror/:api', (req, res) => {
     const { api } = req.params
     const { endpoint } = req.body
+    const token = req.headers['authorization'] || ''
+    const validatedToken = validateToken(token.split(' ')[1])
     if(!apis[api] || !endpoint) {
         return res.status(400).send({ success: false , error: 'Invalid endpoint or not valid api'})
+    }
+    if(!validatedToken || !req.session.username){
+        return res.status(401).send({ success: false , error: 'Invalid token'})
     }
     axios.get(`${apis[api]}${endpoint}`, req.body).then((response) => {
         res.status(200).send(response.data)
@@ -162,15 +138,12 @@ app.post('/mirror/:api', (req, res) => {
 app.get('/api/check', (req, res) => {
     const header = req.headers['authorization'] || ''
     const token = header.split(' ')[1]
-    if(!token) {
-        return res.status(401).send({ success: false })
+    const validatedToken = validateToken(token);
+    if (validatedToken) {
+        res.status(200).send({ success: true, session: validatedToken})
+    }else {
+        res.status(401).send({ success: false })
     }
-    jwt.verify(token, 'not_a_secret', (err, user) => {
-        if(err) {
-            return res.status(403).send({ success: false })
-        }
-        res.status(200).send({ success: true, user })
-    })
 })
 
 // Endpoint to register a new user
@@ -198,7 +171,7 @@ app.post('/api/register', (req, res) => {
 
 // Enpoint to refresh token
 app.post('/api/refresh', (req, res) => {
-    const {user} = req.body;
+    const {username, email} = req.session
     if(user){
         const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
         res.status(200).send({ success: true, token })
@@ -206,6 +179,15 @@ app.post('/api/refresh', (req, res) => {
         res.status(401).send({ success: false })
     }
 })
+
+//Validate jwt token
+async function validateToken(token) {
+    try {
+        return await jwt.verify(token, 'not_a_secret')
+    } catch (err) {
+        return false
+    }
+}
 
 // Regex to check if email is valid
 function validateEmail(email) {
