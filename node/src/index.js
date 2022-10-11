@@ -9,6 +9,7 @@ const { MongoClient } = require('mongodb')
 const uriMongo = 'mongodb://mongo:27017'
 const cors = require('cors')
 const store = new mongoStore({
+    databaseName: 'sessionist',
     collection: 'userSessions',
     uri: uriMongo,
     expires: 1000 * 60 * 60
@@ -33,22 +34,29 @@ const apis = {
 
 // Session middleware
 app.use(session({
-    secret: 'not_a_secret',
     name: 'session',
+    secret: 'not_a_secret',
     store: store,
     saveUninitialized: false,
     resave: false,
     cookie: {
+        domain: '.mirror.local',
         sameSite: false,
-        secure: true,
+        secure: false,
         maxAge: oneMinute,
         httpOnly: true
     }
 }))
-
+const allowedOrigins = ['http://localhost:4200', 'http://info.cern.ch', 'http://localhost:3200', 'http://dev.mirror.local:4200']
 // Cors middleware
 app.use(cors({
-    origin: 'http://localhost:4200',
+    origin: (origin, callback) => {
+        if(allowedOrigins.includes(origin)) {
+            callback(null, true)
+        }else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true
 }))
@@ -107,9 +115,9 @@ app.post('/api/login', (req, res) => {
                 token: token
             }
             req.session.save( err =>{
-                console.log(err)
+                console.log(err, req.session)
                 if(!err) {
-                    res.status(200).send(req.session.user)
+                    res.send(req.session.user)
                 }
             })
         }else {
@@ -137,7 +145,7 @@ app.post('/mirror/:api', (req, res) => {
     if(!apis[api] || !endpoint) {
         return res.status(400).send({ success: false , error: 'Invalid endpoint or not valid api'})
     }
-    if(!validatedToken || !req.session.username){
+    if(!validatedToken){
         return res.status(401).send({ success: false , error: 'Invalid token'})
     }
     axios.get(`${apis[api]}${endpoint}`, req.body).then((response) => {
@@ -152,9 +160,9 @@ app.get('/api/check', (req, res) => {
     const header = req.headers['authorization'] || ''
     const token = header.split(' ')[1]
     const validatedToken = validateToken(token);
-    console.log(req.session)
-    const {username, email} = req.session
-    if (validatedToken && username && email) {
+    //console.log(req.session)
+    //const {username} = req.session
+    if (validatedToken) {
         res.status(200).send({ success: true, session: validatedToken})
     }else {
         res.status(401).send({ success: false })
@@ -186,8 +194,8 @@ app.post('/api/register', (req, res) => {
 
 // Enpoint to refresh token
 app.post('/api/refresh', (req, res) => {
-    const {username, email} = req.session
-    if(user){
+    //const {username, email} = req.session
+    if(true){
         const token = jwt.sign({ user }, 'not_a_secret', { expiresIn: '60s' })
         res.status(200).send({ success: true, token })
     }else {
