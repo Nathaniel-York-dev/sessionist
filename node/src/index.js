@@ -201,7 +201,7 @@ app.post('/api/refresh', (req, res) => {
     //const {username, email} = req.session
     const {session} = req.body
     if(session){
-        const token = jwt.sign(session, 'not_a_secret', { expiresIn: '40s' })
+        const token = jwt.sign(session, 'not_a_secret', { expiresIn: '30s' })
         res.status(200).send({ success: true, token })
     }else {
         res.status(401).send({ success: false })
